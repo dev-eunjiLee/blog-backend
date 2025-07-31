@@ -11,7 +11,7 @@ import FormData from 'form-data';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
-export class UploadService {
+export class FileService {
   constructor(
     // 로거
     private readonly als: LoggerStorage,
@@ -42,10 +42,7 @@ export class UploadService {
    * @description 범용 파일 업로드 함수
    * TODO 실제 파일 업로드 로직은 추가 구현 필요함
    */
-  async uploadFile(
-    file: Express.Multer.File,
-    type: UPLOAD_TYPE,
-  ): Promise<string> {
+  async upload(file: Express.Multer.File, type: UPLOAD_TYPE): Promise<string> {
     // 에러 케이스
     const ERR_OVER_FILE_SIZE = 'ERR_OVER_FILE_SIZE'; // 허용 가능한 파일 사이즈를 오버한 경우
     const ERR_NOT_VALID_TYPE = 'ERR_NOT_VALID_TYPE'; // 업로드 할 수 있는 타입이 아닌 경우
@@ -137,7 +134,7 @@ export class UploadService {
     } catch (error) {
       logger.customError(error, {
         className: this.constructor.name,
-        methodName: this.uploadFile.name,
+        methodName: this.upload.name,
       });
 
       // CLOUDFLARE를 이용해 파일을 업로드하다가 에러가 발생한 경우
@@ -161,7 +158,7 @@ export class UploadService {
    * @param url
    * @returns
    */
-  async deleteFile(type: UPLOAD_TYPE, url: string): Promise<boolean> {
+  async delete(type: UPLOAD_TYPE, url: string): Promise<boolean> {
     return true;
   }
 }

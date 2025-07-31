@@ -19,7 +19,7 @@ import { Request } from 'express';
 import { Blog } from './blog/blog.entity';
 import { BlogModule } from './blog/blog.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { UploadModule } from './upload/upload.module';
+import { FileModule } from './file/file.module';
 import { ResumeModule } from './resume/resume.module';
 import { Resume } from './resume/entities/resume.entity';
 
@@ -173,7 +173,7 @@ import { Resume } from './resume/entities/resume.entity';
     // ===== 2. 로거 ====== //
     LoggerModule,
     // ===== 3. 파일 업로드 ===== //
-    UploadModule,
+    FileModule,
     // ====================================================== //
     // ===== 앱 구동을 위해 커스텀된 실제 비즈니스 로직 ===== //
     // ====================================================== //

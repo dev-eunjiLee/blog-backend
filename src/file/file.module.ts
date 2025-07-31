@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { UploadController } from './upload.controller';
-import { UploadService } from './upload.service';
+import { FileController } from './file.controller';
+import { FileService } from './file.service';
 import {
   UPLOAD_LIMIT_SIZE_OBJ_TOKEN,
   UPLOAD_TYPE_LIST,
@@ -13,7 +13,7 @@ import { HttpModule } from '@nestjs/axios';
 
 @Module({
   providers: [
-    UploadService,
+    FileService,
     {
       // 파일을 업로드하는 경우
       provide: UPLOAD_TYPE_LIST_TOKEN,
@@ -36,7 +36,7 @@ import { HttpModule } from '@nestjs/axios';
       },
     },
   ],
-  controllers: [UploadController],
+  controllers: [FileController],
   imports: [HttpModule],
 })
-export class UploadModule {}
+export class FileModule {}

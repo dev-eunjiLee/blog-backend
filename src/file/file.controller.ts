@@ -7,14 +7,14 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { UploadService } from './upload.service';
+import { FileService } from './file.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UPLOAD_TYPE } from './consts';
 
 // TODO swagger 적용
-@Controller('upload')
-export class UploadController {
-  constructor(private readonly uploadService: UploadService) {}
+@Controller('file')
+export class FileController {
+  constructor(private readonly fileService: FileService) {}
 
   /**
    * @description 파일 업로드. form-data의 key를 'file'로 설정해야한다.
@@ -29,7 +29,7 @@ export class UploadController {
     @UploadedFile()
     file: Express.Multer.File,
   ): Promise<string> {
-    return await this.uploadService.uploadFile(file, type);
+    return await this.fileService.upload(file, type);
   }
 
   /**
@@ -40,6 +40,6 @@ export class UploadController {
     @Param('type') type: UPLOAD_TYPE,
     @Body('url') url: string,
   ): Promise<boolean> {
-    return await this.uploadService.deleteFile(type, url);
+    return await this.fileService.delete(type, url);
   }
 }
