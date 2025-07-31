@@ -1,5 +1,7 @@
 import {
+  Body,
   Controller,
+  Delete,
   Param,
   Post,
   UploadedFile,
@@ -28,5 +30,16 @@ export class UploadController {
     file: Express.Multer.File,
   ): Promise<string> {
     return await this.uploadService.uploadFile(file, type);
+  }
+
+  /**
+   * 이미지 삭제 엔드 포인트
+   */
+  @Delete(':type')
+  async deleteFile(
+    @Param('type') type: UPLOAD_TYPE,
+    @Body('url') url: string,
+  ): Promise<boolean> {
+    return await this.uploadService.deleteFile(type, url);
   }
 }
