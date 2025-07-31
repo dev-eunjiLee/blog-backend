@@ -111,6 +111,7 @@ export class UploadService {
     let url: string;
 
     try {
+      // TODO 헥시고날 아키텍처로 변경하기
       const res = await this.httpService.axiosRef.post(
         `https://api.cloudflare.com/client/v4/accounts/${this.configService.get('CLOUDFLARE_ACCOUNT_ID')}/images/v1`,
         form,
