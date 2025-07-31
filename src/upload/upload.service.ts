@@ -153,4 +153,15 @@ export class UploadService {
 
     return url;
   }
+
+  /**
+   *
+   * @description 이미지 삭제 실제 로직
+   * @param type
+   * @param url
+   * @returns
+   */
+  async deleteFile(type: UPLOAD_TYPE, url: string): Promise<boolean> {
+    return true;
+  }
 }
