@@ -1,10 +1,10 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { LoggerStorage } from 'src/logger/logger-storage';
 import {
-  UPLOAD_LIMIT_SIZE_OBJ_TOKEN,
-  UPLOAD_TYPE,
-  UPLOAD_TYPE_LIST_TOKEN,
-  UPLOAD_VALID_FILE_EXTENSION_OBJ_TOKEN,
+  FILE_LIMIT_SIZE_OBJ_TOKEN,
+  FILE_TYPE,
+  FILE_TYPE_LIST_TOKEN,
+  FILE_VALID_FILE_EXTENSION_OBJ_TOKEN,
 } from './consts';
 import { HttpService } from '@nestjs/axios';
 import FormData from 'form-data';
@@ -26,13 +26,13 @@ export class FileService {
      * UPLOAD_LIMIT_SIZE_OBJ: 각 경우별 파일 사이즈 크기
      * UPLOAD_VALID_FILE_EXTENSION_OBJ: 각 경우별 허용되는 확장자
      */
-    @Inject(UPLOAD_TYPE_LIST_TOKEN)
-    private readonly UPLOAD_TYPE_LIST: Array<UPLOAD_TYPE>,
-    @Inject(UPLOAD_LIMIT_SIZE_OBJ_TOKEN)
-    private readonly UPLOAD_LIMIT_SIZE_OBJ: Record<UPLOAD_TYPE, number>,
-    @Inject(UPLOAD_VALID_FILE_EXTENSION_OBJ_TOKEN)
-    private readonly UPLOAD_VALID_FILE_EXTENSION_OBJ: Record<
-      UPLOAD_TYPE,
+    @Inject(FILE_TYPE_LIST_TOKEN)
+    private readonly FILE_TYPE_LIST: Array<FILE_TYPE>,
+    @Inject(FILE_LIMIT_SIZE_OBJ_TOKEN)
+    private readonly FILE_LIMIT_SIZE_OBJ: Record<FILE_TYPE, number>,
+    @Inject(FILE_VALID_FILE_EXTENSION_OBJ_TOKEN)
+    private readonly FILE_VALID_FILE_EXTENSION_OBJ: Record<
+      FILE_TYPE,
       Array<string>
     >,
   ) {}
@@ -42,7 +42,7 @@ export class FileService {
    * @description 범용 파일 업로드 함수
    * TODO 실제 파일 업로드 로직은 추가 구현 필요함
    */
-  async upload(file: Express.Multer.File, type: UPLOAD_TYPE): Promise<string> {
+  async upload(file: Express.Multer.File, type: FILE_TYPE): Promise<string> {
     // 에러 케이스
     const ERR_OVER_FILE_SIZE = 'ERR_OVER_FILE_SIZE'; // 허용 가능한 파일 사이즈를 오버한 경우
     const ERR_NOT_VALID_TYPE = 'ERR_NOT_VALID_TYPE'; // 업로드 할 수 있는 타입이 아닌 경우
@@ -67,7 +67,7 @@ export class FileService {
 
     const requestId = this.als.getStore()!.customLogger.getRequestId();
 
-    if (!this.UPLOAD_TYPE_LIST.includes(type)) {
+    if (!this.FILE_TYPE_LIST.includes(type)) {
       // 예외처리 0. 파일 업로드 경우 확인
       throw new HttpException(
         {
@@ -78,7 +78,7 @@ export class FileService {
         HttpStatus.BAD_REQUEST,
       );
     }
-    if (file.size > this.UPLOAD_LIMIT_SIZE_OBJ[type]) {
+    if (file.size > this.FILE_LIMIT_SIZE_OBJ[type]) {
       // 예외처리 1. 파일 사이즈 제한을 넘어가는 경우
       throw new HttpException(
         {
@@ -89,12 +89,12 @@ export class FileService {
         HttpStatus.BAD_REQUEST,
       );
     }
-    if (!this.UPLOAD_VALID_FILE_EXTENSION_OBJ[type].includes(file.mimetype)) {
+    if (!this.FILE_VALID_FILE_EXTENSION_OBJ[type].includes(file.mimetype)) {
       // 예외처리 2. 업로드하는 파일의 확장자가 바르지않은경우
       throw new HttpException(
         {
           statusCode: HttpStatus.BAD_REQUEST,
-          message: `파일 확장자를 확인해주세요(허용하는 확장자: ${this.UPLOAD_VALID_FILE_EXTENSION_OBJ[type].map((elem) => `'${elem}'`)} )`,
+          message: `파일 확장자를 확인해주세요(허용하는 확장자: ${this.FILE_VALID_FILE_EXTENSION_OBJ[type].map((elem) => `'${elem}'`)} )`,
           error: `Bad Request - ${ERR_NOT_VALID_EXTENSION} - [${requestId}]`,
         },
         HttpStatus.BAD_REQUEST,
@@ -158,7 +158,7 @@ export class FileService {
    * @param url
    * @returns
    */
-  async delete(type: UPLOAD_TYPE, url: string): Promise<boolean> {
+  async delete(type: FILE_TYPE, url: string): Promise<boolean> {
     return true;
   }
 }

@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { FileService } from './file.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UPLOAD_TYPE } from './consts';
+import { FILE_TYPE } from './consts';
 
 // TODO swagger 적용
 @Controller('file')
@@ -25,7 +25,7 @@ export class FileController {
     FileInterceptor('file'),
   )
   async uploadFile(
-    @Param('type') type: UPLOAD_TYPE,
+    @Param('type') type: FILE_TYPE,
     @UploadedFile()
     file: Express.Multer.File,
   ): Promise<string> {
@@ -37,7 +37,7 @@ export class FileController {
    */
   @Delete(':type')
   async deleteFile(
-    @Param('type') type: UPLOAD_TYPE,
+    @Param('type') type: FILE_TYPE,
     @Body('url') url: string,
   ): Promise<boolean> {
     return await this.fileService.delete(type, url);
