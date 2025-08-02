@@ -35,6 +35,7 @@ export class CustomLogger extends ConsoleLogger {
     message: any,
     option?: { className?: string; methodName?: string },
   ) {
+    // TODO 로그에 있는 ACCOUNT_ID 제거
     const prefix = this.getPrefix(option);
     const processedMessage = this.processMessage(message);
     this.logList.push(JSON.stringify({ prefix, processedMessage }));
