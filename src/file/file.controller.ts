@@ -31,15 +31,4 @@ export class FileController {
   ): Promise<string> {
     return await this.fileService.upload(file, type);
   }
-
-  /**
-   * 이미지 삭제 엔드 포인트
-   */
-  @Delete(':type')
-  async deleteFile(
-    @Param('type') type: FILE_TYPE,
-    @Body('url') url: string,
-  ): Promise<boolean> {
-    return await this.fileService.delete(type, url);
-  }
 }
