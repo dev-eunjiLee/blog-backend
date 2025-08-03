@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { OnEvent } from '@nestjs/event-emitter';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { PostRepository } from './post.repository';
 import { CustomGraphQLError } from 'src/common/error';
 import { CustomLogger } from 'src/logger/logger';
+import { IncreaseViewCountEventDto } from './dtos/view-count.event.dto';
 
 export const EVENT_INCREASE_VIEW_COUNT = 'EVENT_INCREASE_VIEW_COUNT';
 
@@ -12,25 +13,30 @@ export const EVENT_INCREASE_VIEW_COUNT = 'EVENT_INCREASE_VIEW_COUNT';
  */
 @Injectable()
 export class PostEventListener {
-  constructor(private readonly postRepository: PostRepository) {}
+  // ===== 최대 재시도 횟수 ===== //
+  private readonly MAX_RETRY_COUNT = 10;
+
+  constructor(
+    private readonly postRepository: PostRepository,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   /**
    * @description 조회수 증가(이벤트)
    */
   @OnEvent(EVENT_INCREASE_VIEW_COUNT)
   private async increaseViewCount(
-    postId: string,
-    requestId: string,
+    input: IncreaseViewCountEventDto,
   ): Promise<void> {
     // ===== 로거 셋팅 ===== //
     const logger = new CustomLogger(
-      `(event - ${EVENT_INCREASE_VIEW_COUNT}) ${requestId}`,
+      `(event - ${EVENT_INCREASE_VIEW_COUNT}) ${input.requestId} ${input.retryCount}`,
     );
     const prefix = `${this.constructor.name} - ${this.increaseViewCount.name}`;
 
     // ===== input 로그 ===== //
     logger.customLog(
-      { input: { postId, requestId } },
+      { input },
       {
         className: this.constructor.name,
         methodName: this.increaseViewCount.name,
@@ -42,7 +48,9 @@ export class PostEventListener {
 
     try {
       // ===== 조회수 증가 ===== //
-      const updateResult = await this.postRepository.increaseViewCount(postId);
+      const updateResult = await this.postRepository.increaseViewCount(
+        input.payload.postId,
+      );
 
       // ===== 조회수 증가 처리 결과 로그===== //
       logger.customLog(
@@ -63,10 +71,13 @@ export class PostEventListener {
       }
 
       // ===== 조회수 증가가 성공한 경우 로그 ===== //
-      logger.customLog(`success(increase viewCount for "${postId}")`, {
-        className: this.constructor.name,
-        methodName: this.increaseViewCount.name,
-      });
+      logger.customLog(
+        `success(increase viewCount for "${input.payload.postId}")`,
+        {
+          className: this.constructor.name,
+          methodName: this.increaseViewCount.name,
+        },
+      );
     } catch (error) {
       // ===== 조회수 증가에 실패한 경우 에러처리 ===== //
       if (
@@ -74,6 +85,21 @@ export class PostEventListener {
         error.extensions?.customFlag
       ) {
         error.addBriefStacktraceToCode(prefix);
+      }
+
+      // MAX_RETRY_COUNT만큼 재시도
+      if (input.retryCount < this.MAX_RETRY_COUNT) {
+        this.eventEmitter.emit(
+          EVENT_INCREASE_VIEW_COUNT,
+          new IncreaseViewCountEventDto(
+            input.requestId,
+            input.payload,
+            input.retryCount + 1,
+          ),
+        );
+      } else {
+        // ===== 최대 횟수를 초과한 경우 메세지만 추가하기 ===== //
+        error.message = `${error.message} [🚀 조회수 증가 최대 횟수를 초과했습니다.]`;
       }
 
       // ===== 에러 로그 ===== //

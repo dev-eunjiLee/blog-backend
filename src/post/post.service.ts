@@ -15,6 +15,7 @@ import { EVENT_INCREASE_VIEW_COUNT } from './post.event-listener';
 import { Raw } from 'typeorm';
 import { EVENT_FILE_DELETE } from 'src/file/file.event-listener';
 import { FileDeleteEventDto } from 'src/file/file.event.dto';
+import { IncreaseViewCountEventDto } from './dtos/view-count.event.dto';
 
 @Injectable()
 @Wrapper()
@@ -157,8 +158,7 @@ export class PostService {
     // ===== 이벤트로 조회수 증가 ===== //
     this.eventEmitter.emit(
       EVENT_INCREASE_VIEW_COUNT,
-      input.id,
-      loggerRequestId,
+      new IncreaseViewCountEventDto(loggerRequestId, { postId: input.id }),
     );
 
     // ===== 조회할 게시글 리턴 ===== //
