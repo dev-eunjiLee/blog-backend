@@ -208,11 +208,16 @@ export class PostService {
       editorId: writer.id,
     });
 
+    const { deletedUrlList, ...updatedPost } = input;
+
     // ===== 중복 해시태그 확인 ===== //
     input = this.checkPost(input);
 
     // 업데이트하기
-    const updateResult = await this.postRepository.updatePost(input, writer);
+    const updateResult = await this.postRepository.updatePost(
+      updatedPost,
+      writer,
+    );
 
     // 업데이트에 성공한 row가 없는 경우 오류
     if (updateResult.affected === 0) {
@@ -224,7 +229,7 @@ export class PostService {
     }
 
     // 업데이트에 성공한 경우, 이미지 삭제 이벤트 발행
-    this.finalizePost(input);
+    this.finalizePost({ deletedUrlList });
 
     return {
       ...post,
