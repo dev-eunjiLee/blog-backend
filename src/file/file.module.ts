@@ -8,6 +8,7 @@ import {
   FILE_VALID_FILE_EXTENSION_OBJ_TOKEN,
 } from './consts';
 import { HttpModule } from '@nestjs/axios';
+import { FileEventListener } from './file.event-listener';
 
 // 파일을 업로드하는 경우
 
@@ -35,6 +36,7 @@ import { HttpModule } from '@nestjs/axios';
         'profile-image': ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'],
       },
     },
+    FileEventListener,
   ],
   controllers: [FileController],
   imports: [HttpModule],

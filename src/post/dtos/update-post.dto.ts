@@ -4,10 +4,13 @@ import {
   PartialType,
   PickType,
 } from '@nestjs/graphql';
-import { PostInputType } from '../post.entity';
+import { PostFileInputDto, PostInputType } from '../post.entity';
 
 @InputType()
 export class UpdatePostInputDto extends IntersectionType(
-  PickType(PostInputType, ['id']),
-  PartialType(PickType(PostInputType, ['title', 'content', 'hashtagList'])),
+  PostFileInputDto,
+  IntersectionType(
+    PickType(PostInputType, ['id']),
+    PartialType(PickType(PostInputType, ['title', 'content', 'hashtagList'])),
+  ),
 ) {}

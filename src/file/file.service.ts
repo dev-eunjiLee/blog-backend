@@ -150,22 +150,4 @@ export class FileService {
 
     return url;
   }
-
-  /**
-   *
-   * @description 이미지 삭제 실제 로직
-   * @param type
-   * @param url
-   * @returns
-   */
-  async delete(type: FILE_TYPE, url: string): Promise<boolean> {
-    // TODO try - catch 추가 로직 재정비
-    const res = await this.httpService.axiosRef.delete(`${url}`, {
-      headers: {
-        Authorization: `Bearer ${this.configService.get('CLOUDFLARE_API_TOKEN')}`,
-      },
-    });
-
-    return true;
-  }
 }

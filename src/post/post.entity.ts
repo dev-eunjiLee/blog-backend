@@ -1,4 +1,5 @@
 import { Field, InputType, Int, ObjectType } from '@nestjs/graphql';
+import { IsArray, IsOptional, IsString } from 'class-validator';
 import { CommonEntity } from 'src/common/common.entity';
 import { User } from 'src/user/user.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
@@ -46,3 +47,15 @@ export class Post extends IPost {}
 
 @InputType()
 export class PostInputType extends IPost {}
+
+@InputType({ isAbstract: true, description: '삭제할 이미지 url' })
+export class PostFileInputDto {
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  @Field(() => [String], {
+    nullable: true,
+    description: '삭제할 이미지 목록',
+  })
+  deletedUrlList?: string[];
+}

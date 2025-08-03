@@ -13,6 +13,8 @@ import { LoggerStorage } from 'src/logger/logger-storage';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EVENT_INCREASE_VIEW_COUNT } from './post.event-listener';
 import { Raw } from 'typeorm';
+import { EVENT_FILE_DELETE } from 'src/file/file.event-listener';
+import { FileDeleteEventDto } from 'src/file/file.event.dto';
 
 @Injectable()
 @Wrapper()
@@ -24,6 +26,39 @@ export class PostService {
   ) {}
 
   /**
+   * @description 게시글 후처리(현재는 게시글에 사용되지 않은 이미지 삭제만 처리)
+   */
+  private finalizePost(
+    input:
+      | CreatePostInputDto
+      | UpdatePostInputDto
+      | { deletedUrlList?: Array<string> },
+  ): void {
+    // ===== 삭제할 이미지가 있는 경우 이벤트 발행 ===== //
+    if (
+      'deletedUrlList' in input &&
+      Array.isArray(input.deletedUrlList) &&
+      input.deletedUrlList.length > 0
+    ) {
+      // ===== 이벤트에 requestId 넣어서 전달 ===== //
+      const loggerRequestId: string = this.als
+        .getStore()!
+        .customLogger.getRequestId();
+
+      // ===== 삭제할 url을 이용해 파일 삭제 이벤트 발행 ===== //
+      input.deletedUrlList.forEach((deleteUrl) => {
+        this.eventEmitter.emit(
+          EVENT_FILE_DELETE,
+          new FileDeleteEventDto(loggerRequestId, {
+            type: 'post-image',
+            url: deleteUrl,
+          }),
+        );
+      });
+    }
+  }
+
+  /**
    * @description 게시글 작성 및 업데이트 전 내용 확인(현재는 해시태그의 중복만 처리)
    * @param input
    * @returns
@@ -33,12 +68,10 @@ export class PostService {
   ): T {
     let newInput: T = input;
 
-    Object.keys(input).forEach((key) => {
+    if ('hashtagList' in input && input.hashtagList) {
       // ===== input에 hashtagList가 들어온 경우 중복체크 ===== //
-      if (key === 'hashtagList') {
-        newInput[key] = [...new Set(input[key])];
-      }
-    });
+      newInput.hashtagList = [...new Set(input.hashtagList)];
+    }
 
     return newInput;
   }
@@ -61,7 +94,7 @@ export class PostService {
         });
       }
 
-      // ===== 게시글 작성 전 확인 2. 게시글 작성 전 게시글의 내용 확인 ===== //
+      // ===== 게시글 작성 전 확인 2. 게시글 작성 전 게시글의 내용 확인(중복 해시태그 확인) ===== //
       input = this.checkPost(input);
 
       // ===== 게시글 작성 ===== //
@@ -69,6 +102,9 @@ export class PostService {
         id: user.id,
         blogId: user.blog.id,
       });
+
+      // ===== 게시글 후처리(사용안하는 이미지 삭제 이벤트 발행) ===== //
+      this.finalizePost(input);
 
       // ===== 작성한 게시글 리턴 ===== //
       return post;
@@ -172,6 +208,7 @@ export class PostService {
       editorId: writer.id,
     });
 
+    // ===== 중복 해시태그 확인 ===== //
     input = this.checkPost(input);
 
     // 업데이트하기
@@ -185,6 +222,9 @@ export class PostService {
         },
       });
     }
+
+    // 업데이트에 성공한 경우, 이미지 삭제 이벤트 발행
+    this.finalizePost(input);
 
     return {
       ...post,
@@ -203,10 +243,25 @@ export class PostService {
     const ERR_FAILED = 'ERR_FAILED';
 
     // 삭제 가능한 게시글인지 확인하기
-    await this.getEditablePost({
+    const post = await this.getEditablePost({
       postId: input.id,
       editorId: writer.id,
     });
+
+    // ===== 삭제될 게시글 내에 사용된 이미지 링크 추출 ===== //
+    const deletedUrlList: string[] = [];
+
+    // 만약 본문이 없는 경우 추출할 url 없기 때문에 분기를 타지 않는다.
+    if (post.content) {
+      const imgRegex = /<img[^>]+src="([^">]+)"/g;
+      let match: RegExpExecArray | null;
+
+      // imgRegex 객체 내부의 lastIndex값은 exec을 실행할 때 마다 업데이트가 되며,
+      // 일치하는 값이 없는 경우 null이 리턴된다.
+      while ((match = imgRegex.exec(post.content)) !== null) {
+        deletedUrlList.push(match[1]);
+      }
+    }
 
     // 게시글 삭제하기
     const [deleteResult, queryRunner] = await this.postRepository.deletePost(
@@ -230,6 +285,11 @@ export class PostService {
       await queryRunner.rollbackTransaction();
     } else {
       await queryRunner.commitTransaction();
+
+      // ===== 삭제할 이미지가 있는 경우 삭제 처리(함수 내부에서 이벤트 발행) ===== //
+      if (deletedUrlList.length > 0) {
+        this.finalizePost({ deletedUrlList });
+      }
     }
 
     return true;
